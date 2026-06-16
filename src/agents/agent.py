@@ -9,7 +9,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
+from langchain_core.messages import SystemMessage, AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 
 from src.agents.tools import rag_search
@@ -19,6 +19,7 @@ from src.agents.guardrails import run_guardrails
 load_dotenv()
 
 MODEL = "gpt-4o-mini"
+MAX_RAG_SEARCH_CALLS = 2
 tools = [rag_search]
 
 
@@ -108,9 +109,16 @@ def generate_query(state: AgentState, config: RunnableConfig) -> AgentState:
 
 def should_continue(state: AgentState) -> str:
     last_message = state["messages"][-1]
-    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
-        return "generate_query"
-    return END
+    if not (hasattr(last_message, "tool_calls") and last_message.tool_calls):
+        return END
+    # Hard ceiling: prompt drift must not be able to re-enable the retry loop.
+    rag_calls = sum(
+        1 for m in state["messages"]
+        if isinstance(m, ToolMessage) and getattr(m, "name", None) == "rag_search"
+    )
+    if rag_calls >= MAX_RAG_SEARCH_CALLS:
+        return END
+    return "generate_query"
 
 
 tool_node = ToolNode(tools)

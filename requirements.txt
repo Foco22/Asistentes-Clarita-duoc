@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+langgraph
+langchain-openai
+langchain
+pymongo
+python-dotenv
+openai
+langsmith
+python-telegram-bot
+supabase

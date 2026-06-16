@@ -55,7 +55,7 @@ def check_guardrails(state: AgentState, config: RunnableConfig) -> AgentState:
     )
     if last_human is None:
         return {"is_offensive": False, "is_prompt_injection": False, "is_war_topic": False}
-    results = run_guardrails(last_human.content, model)
+    results = run_guardrails(last_human.content, model, config)
     return results
 
 
@@ -136,4 +136,4 @@ graph.add_edge("generate_query", "tools")
 graph.add_edge("tools", "agent")
 
 checkpointer = MemorySaver()
-app = graph.compile(checkpointer=checkpointer)
+app = graph.compile(checkpointer=checkpointer, name="asistente_clarita")

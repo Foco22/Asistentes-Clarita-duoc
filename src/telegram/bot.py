@@ -62,7 +62,13 @@ class TelegramBot:
 
         message_id = self._logger.log_message(session_id, "user", user_text)
 
-        config = {"configurable": {"thread_id": thread_id}}
+        # Mirror thread_id (and chat_id) into metadata so LangSmith's Threads view
+        # can group turns; configurable.thread_id alone only drives the checkpointer.
+        config = {
+            "configurable": {"thread_id": thread_id},
+            "metadata": {"thread_id": thread_id, "chat_id": chat_id},
+            "run_name": "asistente_clarita",
+        }
         model = config["configurable"].get("model", MODEL)
         company = _get_company(model)
 
